@@ -14,11 +14,13 @@ class HtmlSubstringError extends Error {}
 
 interface Options {
   breakWords: boolean
-  suffix: (() => string) | string | null
+  suffix: (() => string) | string | null,
+  shouldEncloseSuffixInTags: boolean
 }
 
 const DEFAULT_OPTIONS: Options = {
   breakWords: true,
+  shouldEncloseSuffixInTags: false,
   suffix: null,
 }
 
@@ -124,6 +126,7 @@ export function html_substring(
   const openedQueue: Array<[string, string]> = [] // nonflushed open tags
   const closeQueue: string[] = [] // list of tags to be closed
   let result: string = ''
+  let suffixAdded = false
 
   const openTags = (onlyVoid: boolean = false) => {
     while (true) {
@@ -151,6 +154,33 @@ export function html_substring(
         closeQueue.push(`</${tag}>`)
       }
     }
+  }
+
+  const getResultWithSuffixAfterClosingTags = (result: string, closeQueue: string[], flushed: boolean): string => {
+    const resultWithoutSuffix = [result, ...closeQueue].join('')
+
+    return flushed ? resultWithoutSuffix : addSuffix(resultWithoutSuffix)
+  }
+
+  const getResultWithSuffixBeforeClosingTags = (result: string, closeQueue: string[], flushed: boolean): string => {
+    const resultWithSuffix = flushed ? result : addSuffix(result)
+
+    return [resultWithSuffix, ...closeQueue].join('')
+  }
+
+  const addSuffix = (result: string): string => {
+    let suffix = opts.suffix
+    if (!suffixAdded && suffix !== null) {
+      if (typeof suffix === 'function') {
+        suffix = suffix()
+      }
+
+      suffixAdded = true
+
+      return result + suffix
+    }
+
+    return result
   }
 
   const cw: string[] = [] // current word
@@ -247,6 +277,10 @@ export function html_substring(
               }
             }
 
+            if (current >= length && opts.shouldEncloseSuffixInTags) {
+              result = addSuffix(result)
+            }
+
             result += '</'
             result += tag
             result += '>'
@@ -303,20 +337,12 @@ export function html_substring(
   const flushed = flushWord()
 
   closeQueue.reverse()
-  result = [result, ...closeQueue].join('')
 
-  if (!flushed) {
-    let suffix = opts.suffix
-    if (suffix !== null) {
-      if (typeof suffix === 'function') {
-        suffix = suffix()
-      }
-
-      result += suffix
-    }
+  if (opts.shouldEncloseSuffixInTags) {
+    return getResultWithSuffixBeforeClosingTags(result, closeQueue, flushed)
   }
 
-  return result
+  return getResultWithSuffixAfterClosingTags(result, closeQueue, flushed)
 }
 
 export default html_substring

@@ -10,6 +10,7 @@ Module making safe substring of HTML source
 interface Options {
   breakWords: boolean // defaults to true
   suffix: (() => string) | string | null // defaults to null
+  shouldEncloseSuffixInTags: boolean // defaults to false
 }
 
 /**
@@ -34,6 +35,20 @@ import html_substring from 'html-substring'
 
 console.log(html_substring('<span><div>Hello</div> <p>World</p></span>', 6))
 // <span><div>Hello</div> </span>
+
+console.log(html_substring(
+    '<p>Hello World</p>', 
+    8,
+    { suffix: '…', shouldEncloseSuffixInTags: true}
+))
+// <p>Hello Wo…</p>
+
+console.log(html_substring(
+    '<p>Hello World</p>', 
+    8,
+    { suffix: '…', shouldEncloseSuffixInTags: true, breakWords: false }
+))
+// <p>Hello…</p>
 ```
 
 You can look [tests](https://github.com/Tarik02/html-substring-js/blob/master/test/test.ts) for more examples

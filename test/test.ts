@@ -289,4 +289,42 @@ describe('html_substring', () => {
       expect(result).to.eq('>>>\_(*L*)_/<<>>>\_(*L*)_/<<')
     })
   })
+
+  describe('enclose suffix in tags', () => {
+    it('should include suffix before closing tag in queue', () => {
+      const result = html_substring(
+          '<p>Hello World</p>',
+          8,
+          { suffix: '…', shouldEncloseSuffixInTags: true },
+      )
+      expect(result).to.eq('<p>Hello Wo…</p>')
+    })
+
+    it('should include suffix before all closing tags in queue', () => {
+      const result = html_substring(
+          '<p><b>Hello World</b></p>',
+          8,
+          { suffix: '…', shouldEncloseSuffixInTags: true },
+      )
+      expect(result).to.eq('<p><b>Hello Wo…</b></p>')
+    })
+
+    it('should include suffix before closing tags in queue in non breaking word context', () => {
+      const result = html_substring(
+          '<p><b>Hello World</b></p>',
+          8,
+          { suffix: '…', shouldEncloseSuffixInTags: true, breakWords: false },
+      )
+      expect(result).to.eq('<p><b>Hello…</b></p>')
+    })
+
+    it('should include suffix even if there is no tags', () => {
+      const result = html_substring(
+          'Hello World',
+          8,
+          { suffix: '…', shouldEncloseSuffixInTags: true, breakWords: false },
+      )
+      expect(result).to.eq('Hello…')
+    })
+  })
 })
